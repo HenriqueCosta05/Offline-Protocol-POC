@@ -41,3 +41,9 @@ example
 # generated native folders
 /ios
 /android
+
+# web / bridge
+web/dist/
+__pycache__/
+.pytest_cache/
+.bridge-state/

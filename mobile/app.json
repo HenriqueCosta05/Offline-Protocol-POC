@@ -14,8 +14,11 @@
         "NSBluetoothPeripheralUsageDescription": "Required for offline mesh communication",
         "UIBackgroundModes": [
           "bluetooth-central",
+          "bluetooth-peripheral",
+          "bluetooth-central",
           "bluetooth-peripheral"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "dev.hqcosta.offlineprotocolpoc"
     },

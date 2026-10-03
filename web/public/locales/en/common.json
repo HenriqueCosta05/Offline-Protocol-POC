@@ -1,0 +1,32 @@
+{
+  "app": { "title": "Offline Messenger" },
+  "banner": {
+    "connecting": "Connecting to the mesh bridge…",
+    "connected": "Connected to the mesh bridge",
+    "disconnected": "Bridge offline. Messages are saved and will be sent when it reconnects."
+  },
+  "peers": {
+    "title": "Peers",
+    "empty": "No peers yet. Waiting for the mesh to discover neighbours.",
+    "offline": "offline",
+    "signal": "{{rssi}} dBm"
+  },
+  "thread": {
+    "selectPeer": "Select a peer to start chatting.",
+    "empty": "No messages yet. Say hello!",
+    "with": "Chat with {{peer}}"
+  },
+  "composer": {
+    "placeholder": "Type a message",
+    "label": "Message",
+    "send": "Send"
+  },
+  "message": {
+    "status": {
+      "pending": "Waiting to send",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "failed": "Failed"
+    }
+  }
+}

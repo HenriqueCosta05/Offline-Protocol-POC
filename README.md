@@ -1,56 +1,52 @@
-# Welcome to your Expo app 👋
+# Offline Protocol messaging PoC
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+| Folder | What it is |
+|---|---|
+| `mobile/` | Expo / React Native app using `@offline-protocol/mesh-sdk` directly (BLE, WiFi Direct). |
+| `web/` | React 19 SPA (Rsbuild, MUI, Redux Toolkit, react-i18next, MSW). |
+| `bridge/` | Python WebSocket service that hosts the SDK for the browser. |
 
-## Get started
+The SDK has no browser build, so the web app talks to the bridge over `ws://127.0.0.1:8765`:
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+browser (web/) <-- JSON frames over WebSocket --> bridge/ <-- Python bindings --> Offline Protocol mesh
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Run the web app
 
-### Other setup steps
+No hardware needed, using the bridge's loopback mesh (it echoes your messages):
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+pip install -r bridge/requirements.txt
+python -m bridge --fake          # terminal 1
 
-## Learn more
+cd web && npm install
+npm run dev                      # terminal 2 -> http://localhost:5173
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Or run without Python at all, with the bridge emulated in the browser by MSW:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+cd web && npm run dev:mock
+```
 
-## Join the community
+Scripts in `web/`: `npm test`, `npm run typecheck`, `npm run build`. Bridge tests: `python -m pytest bridge/tests -c bridge/pytest.ini --rootdir=.`.
 
-Join our community of developers creating universal apps.
+## Use the real mesh
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+`python -m bridge` (without `--fake`) uses the SDK's desktop Python bindings through `bridge/manager.py`. They have no prebuilt wheel, so build them from source:
+
+1. Install Rust (<https://rustup.rs>), then `cargo install uniffi --version 0.30.0 --features cli --locked`.
+2. Clone <https://github.com/Offline-Protocol/offline-protocol-sdk>, then `cd bindings/python && bash scripts/build-desktop.sh && pip install -e .`.
+3. `python -m bridge --user-id <your-id>`.
+
+**Not verified:** the `SdkMesh` adapter has only been exercised through a fake mesh. Its event translation follows the SDK README and may need adjusting against the real bindings and live peers.
+
+## Behaviour worth knowing
+
+- **Offline-first:** messages and peers persist in `localStorage`. Sending while the bridge is down queues the message as pending, and it is sent in order on reconnect.
+- **Delivery states:** pending (queued), sent (handed to the bridge), delivered or failed (reported by the mesh). "Sent" has no acknowledgement, so a message handed to a bridge that dies immediately afterwards stays "sent".
+- **Security:** the bridge binds to loopback only and rejects WebSocket connections whose Origin is not `http://localhost:5173` or `http://127.0.0.1:5173`.
+- **Config:** `PUBLIC_BRIDGE_URL` overrides the WebSocket address.
+
+Design and plan: `docs/superpowers/specs/` and `docs/superpowers/plans/`.
